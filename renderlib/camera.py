@@ -61,9 +61,11 @@ class Camera:
         # Transform for camera
         self.transform = Transform() if transform is None else transform
 
-        if char_x is None or char_y is None:
-            char_y, char_x = Camera.get_terminal_size()
-            char_y = char_y - 2  # space for redraw alignment
+        default_char_y, default_char_x = Camera.get_terminal_size()
+        default_char_y = default_char_y - 2  # space for redraw alignment
+
+        char_x = char_x if char_x is not None else default_char_x
+        char_y = char_y if char_y is not None else default_char_y
 
         self.useBrailleFont = use_braille_font
         px = char_x * (2 if use_braille_font else 1)
@@ -204,7 +206,7 @@ def draw_line(plot: NDArray, v1: NDArray, v2: NDArray) -> None:
         return
 
     delta = v2 - v1
-    step = 1 / PRECISION
+    step = 1 / (PRECISION - 1)
 
     for i in range(PRECISION):
         point = v1 + i * step * delta
