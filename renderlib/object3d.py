@@ -2,14 +2,11 @@ from .transform import Transform
 import numpy as np
 import os
 import sys
-from pathlib import Path
 
 
-# Get the working folder
-if len(sys.argv) <= 0 or sys.argv[0] is None:
-    raise RuntimeError("Cannot determine entry script path")
-
-SCRIPT_DIR = Path(sys.argv[0]).resolve().parent
+arg_path = sys.argv[0]
+abs_path = os.path.abspath(arg_path)
+script_dir = os.path.dirname(abs_path)
 
 
 class Mesh:
@@ -27,7 +24,7 @@ class Mesh:
         vertices = []
         edges = set()  # set to remove duplicate edges
 
-        file_path = os.path.join(SCRIPT_DIR, file_path)
+        file_path = os.path.join(script_dir, file_path)
 
         with open(file_path, "r") as f:
             for line in f:
