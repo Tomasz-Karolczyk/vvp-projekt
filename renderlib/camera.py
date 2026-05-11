@@ -44,7 +44,6 @@ class Camera:
         fov: float = np.pi / 3,
         aspect: float = 1,
         near: float = 0.1,
-        far: float = 100.0,
         use_braille_font: bool = True,
         adjust_to_font_size: bool = True,
     ):
@@ -54,7 +53,7 @@ class Camera:
         'transform' initializes cameras transform fallbacks to defaults when unspecified.
         'fow' sets field of view (viewing angle along width).
         'aspect' specifies cameras aspect.
-        'near' and 'far' specify distance of near plane and far plane.
+        'near' specifies distance of near plane.
         'useBraille' increases resolution by factor of 8 by rendering braille dots as 8 pixels within each character.
         'adjustToFontSize' modifies aspect so font dimensions don't affect the aspect o the camera.
         """
@@ -80,7 +79,6 @@ class Camera:
         self.fov = fov
         self.aspect = screen_aspect * aspect
         self.near = near
-        self.far = far
 
         self.char_plot_size = (char_y, char_x)
         self.plot_size = (py, px)
@@ -101,22 +99,6 @@ class Camera:
 
         return self.transform.get_inverse_matrix()
 
-    def get_projection_matrix(self) -> NDArray:
-        """
-        Returns 4x4 perspective projection matrix.
-        """
-
-        far = self.far
-        near = self.near
-        scale = 1 / np.tan(self.fov / 2)
-        P = np.zeros((4, 4), dtype=np.float32)
-        P[0, 0] = scale / self.aspect
-        P[1, 1] = scale
-        P[2, 2] = (far + near) / (far - near)
-        P[2, 3] = -2 * far * near / (far - near)
-        P[3, 2] = 1
-        return P
-
     def draw_objects(self, objects: Iterable[Object]):
         """
         This method renders multiple objects to a buffer.
@@ -132,31 +114,26 @@ class Camera:
 
         # get matrices
         V = self.get_view_matrix()
-        P = self.get_projection_matrix()
         T = object.transform.get_matrix()
-        M = P @ V @ T
+        M = V @ T
 
-        #       T@       V@      P@
-        # model -> world -> view -> clip space
+        #       T@       V@
+        # model -> world -> view
         vertices = M @ object.mesh.vertices
 
-        # clip space -> ndc x,y e <0, 1>
-        w = vertices[3, :]
-        w = np.where(w == 0, 1e-8, w)
-        # abs due to clipping, can't be used for surface renderers
-        vertices[:2, :] /= np.abs(w)
+        # ndc space x,y e <-1, 1>
+        fov_multiplier = 1 / np.tan(self.fov / 2)
+        x = vertices[0, :] / np.abs(vertices[2, :]) * (fov_multiplier / self.aspect)
+        y = vertices[1, :] / np.abs(vertices[2, :]) * fov_multiplier
+        z = vertices[2, :] - self.near  # used only for culling, align near plane with 0
 
-        # ndc -> screen space -> "pixel space"
-        x = (0.5 + vertices[0, :] * 0.5) * self.plot_size[1]
-        y = (0.5 - vertices[1, :] * 0.5) * self.plot_size[0]  # flip Y
+        # ndc -> screen space <0, 1> -> "pixel space"
+        x = (0.5 + x * 0.5) * self.plot_size[1]
+        y = (0.5 - y * 0.5) * self.plot_size[0]  # flip Y
 
-        z = vertices[2, :]  # for clipping
         screen_space = np.vstack([x, y, z])  # (3, N)
 
-        for edge in object.mesh.edges:
-            v1 = screen_space[:, edge[0]]
-            v2 = screen_space[:, edge[1]]
-            draw_line(self.plot, self.plot_size, v1, v2)
+        draw_edges(self.plot, screen_space, object.mesh.edges)
 
     def GetChar(self, x: int, y: int) -> str:
         """
@@ -200,26 +177,45 @@ class Camera:
 
 
 @numba.njit(cache=True, fastmath=True, parallel=True)
-def draw_line(
-    plot: NDArray, plot_size: tuple[int, int], v1: NDArray, v2: NDArray
-) -> None:
+def draw_edges(plot: NDArray, vertices: NDArray, edges: NDArray) -> None:
+    """
+    This makes draw_line calls for each edge in object.
+    """
+    for i in numba.prange(edges.shape[0]):
+        v1 = vertices[:, edges[i, 0]]
+        v2 = vertices[:, edges[i, 1]]
+        draw_line(plot, v1, v2)
+
+
+@numba.njit(cache=True, fastmath=True)
+def draw_line(plot: NDArray, v1: NDArray, v2: NDArray) -> None:
     """
     This method draws line between positions 'v1' and 'v2'.
     """
 
+    # cull lines that are entirely outside of the view frustum
+    if (
+        (v1[2] < 0 and v2[2] < 0)
+        or (v1[0] < 0 and v2[0] < 0)
+        or (v1[1] < 0 and v2[1] < 0)
+        or (v1[0] >= plot.shape[1] and v2[0] >= plot.shape[1])
+        or (v1[1] >= plot.shape[0] and v2[1] >= plot.shape[0])
+    ):
+        return
+
     delta = v2 - v1
     step = 1 / PRECISION
 
-    for i in numba.prange(PRECISION):
+    for i in range(PRECISION):
         point = v1 + i * step * delta
 
         if point[2] < 0:
             continue
-        plot_at(plot, plot_size, point[0], point[1])
+        plot_at(plot, point[0], point[1])
 
 
 @numba.njit(cache=True, fastmath=True)
-def plot_at(plot: NDArray, plot_size: tuple[int, int], x: float, y: float) -> None:
+def plot_at(plot: NDArray, x: float, y: float) -> None:
     """
     This method sets logical pixel at [x, y] in buffer.
     """
@@ -227,7 +223,7 @@ def plot_at(plot: NDArray, plot_size: tuple[int, int], x: float, y: float) -> No
     x = int(x)
     y = int(y)
 
-    if x < 0 or y < 0 or x >= plot_size[1] or y >= plot_size[0]:
+    if x < 0 or y < 0 or x >= plot.shape[1] or y >= plot.shape[0]:
         return
 
     plot[y, x] = True
