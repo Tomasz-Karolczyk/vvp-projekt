@@ -2,6 +2,7 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 from scipy.spatial.transform import Rotation
+from typing import SupportsFloat
 
 
 class vec3:
@@ -11,9 +12,9 @@ class vec3:
 
     def __init__(
         self,
-        x: float | Any | None = None,
-        y: float | None = None,
-        z: float | None = None,
+        x: SupportsFloat | Any | None = None,
+        y: SupportsFloat | None = None,
+        z: SupportsFloat | None = None,
     ):
         """
         Creates vector:
@@ -26,17 +27,19 @@ class vec3:
             self.vec = np.zeros(3, dtype=float)
 
         elif y is None and z is None:
-            if isinstance(x, vec3):
-                self.vec = x.vec.copy()
+            try:
+                if isinstance(x, SupportsFloat):
+                    self.vec = np.array([float(x), 0.0, 0.0], dtype=float)
 
-            elif isinstance(x, float):
-                self.vec = np.array([x, 0.0, 0.0], dtype=float)
+            except TypeError:
+                if isinstance(x, vec3):
+                    self.vec = x.vec.copy()
 
-            else:
-                arr = np.array(x, dtype=float)
-                if arr.shape != (3,):
-                    raise ValueError("vec3 must be a 1D array of length 3")
-                self.vec = arr
+                else:
+                    arr = np.array(x, dtype=float)
+                    if arr.shape != (3,):
+                        raise ValueError("vec3 must be a 1D array of length 3")
+                    self.vec = arr
 
         elif z is None:
             self.vec = np.array([x, y, 0.0], dtype=float)
@@ -47,6 +50,12 @@ class vec3:
         else:
             self.vec = np.array([x, y, z], dtype=float)
 
+    def __str__(self) -> str:
+        return f"({self.x}, {self.y}, {self.z})"
+
+    def __repr__(self) -> str:
+        return f"vec3{self.__str__()}"
+
     def __add__(self, other: "vec3") -> "vec3":
         return vec3(self.vec + other.vec)
 
@@ -56,11 +65,18 @@ class vec3:
     def __mul__(self, other: float) -> "vec3":
         return vec3(self.vec * other)
 
-    def __div__(self, other: float) -> "vec3":
+    def __truediv__(self, other: float) -> "vec3":
         return vec3(self.vec / other)
 
+    def norm(self) -> float:
+        return float(np.linalg.norm(self.vec))
+
     def normalize(self) -> "vec3":
-        return vec3(self.vec / np.linalg.norm(self.vec))
+        norm = self.norm()
+        EPSILON = 1e-8
+        if norm == EPSILON:
+            return vec3.zero()
+        return vec3(self.vec / norm)
 
     @staticmethod
     def one() -> "vec3":
@@ -80,19 +96,19 @@ class vec3:
 
     @property
     def y(self) -> float:
-        return self.vec[0]
+        return self.vec[1]
 
     @y.setter
     def y(self, val: float) -> None:
-        self.vec[0] = val
+        self.vec[1] = val
 
     @property
     def z(self) -> float:
-        return self.vec[0]
+        return self.vec[2]
 
     @z.setter
     def z(self, val: float) -> None:
-        self.vec[0] = val
+        self.vec[2] = val
 
 
 class Transform:
