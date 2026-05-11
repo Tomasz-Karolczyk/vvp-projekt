@@ -48,7 +48,14 @@ class Mesh:
                     indices = []
                     for p in parts:
                         numAsStr = p.split("/")[0]
-                        indices.append(int(numAsStr) - 1)
+                        index = int(numAsStr)
+                        if index > 0:
+                            index -= 1
+                        elif index < 0:
+                            index = len(vertices) + index
+                        else:
+                            raise ValueError("Index in .obj file cannot be 0")
+                        indices.append(index)
 
                     # generate edges for the face as loop (breaks down the face to individual edges)
                     count = len(indices)
