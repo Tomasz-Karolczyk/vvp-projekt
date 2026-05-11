@@ -12,8 +12,15 @@ Tento projekt se zabývá perspektivním vykreslováním 3D objektů do terminá
 - Vykreslovaní fungujici i pro hrany překračující `near plane`
 
 ## Příklady
+Spuštění:
+- `python examples/main.py` 
+
+Tento jeden příklad ukazuje mnoho funkcionalit renderlib:
 - Načtení dvou meshů (krychle a pravidelný dvaceti-stěn)
 - Tvorba 3 objektů (jeden dvaceti-stěn a dvě krychle sdílející jeden mesh)
 - Ukázka použití animací (rotující dvaceti-stěn, pohybujici se krychle a krychle měnící svůj rozměr)
 - Ukázka transformace kamery (rotující kamera)
 - Jednoduchý vykreslovací cyklus
+
+## Setup knihovny
+- `pip install .`
