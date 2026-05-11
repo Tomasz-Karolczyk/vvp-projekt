@@ -222,10 +222,13 @@ def plot_at(plot: NDArray, x: float, y: float) -> None:
     This method sets logical pixel at [x, y] in buffer.
     """
 
+    if x < 0 or y < 0:
+        return
+
     x = int(x)
     y = int(y)
 
-    if x < 0 or y < 0 or x >= plot.shape[1] or y >= plot.shape[0]:
+    if x >= plot.shape[1] or y >= plot.shape[0]:
         return
 
     plot[y, x] = True
