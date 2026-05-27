@@ -67,7 +67,7 @@ class Camera:
         char_x = char_x if char_x is not None else default_char_x
         char_y = char_y if char_y is not None else default_char_y
 
-        self.useBrailleFont = use_braille_font
+        self.use_braille_font = use_braille_font
         px = char_x * (2 if use_braille_font else 1)
         py = char_y * (4 if use_braille_font else 1)
 
@@ -109,7 +109,7 @@ class Camera:
         for o in objects:
             self.draw_object(o)
 
-    def draw_object(self, object: Object):
+    def draw_object(self, object: Object) -> None:
         """
         This method renders 'object' to a buffer.
         """
@@ -137,13 +137,13 @@ class Camera:
 
         draw_edges(self.plot, screen_space, object.mesh.edges)
 
-    def GetChar(self, x: int, y: int) -> str:
+    def get_char(self, x: int, y: int) -> str:
         """
         This method generates character for [x, y] position.
         Expects 'x' and 'y' to be in bounds.
         """
 
-        if not self.useBrailleFont:
+        if not self.use_braille_font:
             return "#" if self.plot[y, x] else " "
 
         y *= 4
@@ -158,7 +158,7 @@ class Camera:
         BRAILLE_OFFSET = 0x2800
         return chr(BRAILLE_OFFSET + index)
 
-    def Show(self) -> None:
+    def show(self) -> None:
         """
         This method converts the buffer into string and writes it to terminal.
         """
@@ -167,7 +167,7 @@ class Camera:
 
         for y in range(self.char_plot_size[0]):
             for x in range(self.char_plot_size[1]):
-                text += self.GetChar(x, y)
+                text += self.get_char(x, y)
             text += "\n"
 
         # os.system('clear')

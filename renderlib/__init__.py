@@ -1,15 +1,15 @@
-from .anim import Rotate, Lerp, LerpScale, Animate
+from .anim import Rotate, Lerp, LerpScale, animate
 from .camera import Camera
 from .object3d import Object, Mesh
-from .transform import vec3
+from .transform import Vec3
 
 __all__ = [
     "Rotate",
     "Lerp",
     "LerpScale",
-    "Animate",
+    "animate",
     "Camera",
     "Object",
     "Mesh",
-    "vec3",
+    "Vec3",
 ]

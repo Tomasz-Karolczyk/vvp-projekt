@@ -1,4 +1,4 @@
-from .transform import Transform, vec3
+from .transform import Transform, Vec3
 from scipy.spatial.transform import Rotation
 from typing import Callable
 import time
@@ -8,7 +8,7 @@ animation_registry = []
 prev_time = time.time()
 
 
-def Animate():
+def animate() -> None:
     """
     Method that performs step of all active animations.
     """
@@ -113,7 +113,7 @@ class Rotate(Animation):
     def __init__(
         self,
         target: Transform,
-        axis: vec3,
+        axis: Vec3,
         angle: float,
         time: float | None = None,
         execute_after: Callable | None = None,
@@ -147,9 +147,9 @@ class Lerp(Animation):
     def __init__(
         self,
         target: Transform,
-        end: vec3,
+        end: Vec3,
         time: float,
-        start: vec3 | None = None,
+        start: Vec3 | None = None,
         execute_after: Callable | None = None,
     ):
         """
@@ -183,9 +183,9 @@ class LerpScale(Animation):
     def __init__(
         self,
         target: Transform,
-        end: vec3,
+        end: Vec3,
         time: float,
-        start: vec3 | None = None,
+        start: Vec3 | None = None,
         execute_after: Callable | None = None,
     ):
         """

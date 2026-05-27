@@ -5,7 +5,7 @@ from scipy.spatial.transform import Rotation
 from typing import SupportsFloat
 
 
-class vec3:
+class Vec3:
     """
     Class for simplified work with numpy arrays of size 3.
     """
@@ -19,7 +19,7 @@ class vec3:
         """
         Creates vector:
         When x is float or None vector will be (x, y, z) None will default to 0.
-        When x is vec3 it will be copied.
+        When x is Vec3 it will be copied.
         When x is anything else 'np.array' will try to do the conversion.
         """
 
@@ -32,13 +32,13 @@ class vec3:
                     self.vec = np.array([float(x), 0.0, 0.0], dtype=float)
 
             except TypeError:
-                if isinstance(x, vec3):
+                if isinstance(x, Vec3):
                     self.vec = x.vec.copy()
 
                 else:
                     arr = np.array(x, dtype=float)
                     if arr.shape != (3,):
-                        raise ValueError("vec3 must be a 1D array of length 3")
+                        raise ValueError("Vec3 must be a 1D array of length 3")
                     self.vec = arr
 
         elif z is None:
@@ -54,37 +54,50 @@ class vec3:
         return f"({self.x}, {self.y}, {self.z})"
 
     def __repr__(self) -> str:
-        return f"vec3{self.__str__()}"
+        return f"Vec3{self.__str__()}"
 
-    def __add__(self, other: "vec3") -> "vec3":
-        return vec3(self.vec + other.vec)
+    def __add__(self, other: "Vec3") -> "Vec3":
+        return Vec3(self.vec + other.vec)
 
-    def __sub__(self, other: "vec3") -> "vec3":
-        return vec3(self.vec - other.vec)
+    def __sub__(self, other: "Vec3") -> "Vec3":
+        return Vec3(self.vec - other.vec)
 
-    def __mul__(self, other: float) -> "vec3":
-        return vec3(self.vec * other)
+    def __mul__(self, other: float) -> "Vec3":
+        return Vec3(self.vec * other)
 
-    def __truediv__(self, other: float) -> "vec3":
-        return vec3(self.vec / other)
+    def __truediv__(self, other: float) -> "Vec3":
+        return Vec3(self.vec / other)
 
     def norm(self) -> float:
+        """
+        Returns norm of the vector.
+        """
         return float(np.linalg.norm(self.vec))
 
-    def normalize(self) -> "vec3":
+    def normalize(self) -> "Vec3":
+        """
+        Normalizes vector.
+        """
+
         norm = self.norm()
         EPSILON = 1e-8
         if norm == EPSILON:
-            return vec3.zero()
-        return vec3(self.vec / norm)
+            return Vec3.zero()
+        return Vec3(self.vec / norm)
 
     @staticmethod
-    def one() -> "vec3":
-        return vec3(1, 1, 1)
+    def one() -> "Vec3":
+        """
+        Creates vector(1, 1, 1).
+        """
+        return Vec3(1, 1, 1)
 
     @staticmethod
-    def zero() -> "vec3":
-        return vec3()
+    def zero() -> "Vec3":
+        """
+        Creates vector(0, 0, 0).
+        """
+        return Vec3(0, 0, 0)
 
     @property
     def x(self) -> float:
@@ -118,9 +131,9 @@ class Transform:
 
     def __init__(
         self,
-        position: vec3 | None = None,
+        position: Vec3 | None = None,
         rotation: Rotation | None = None,
-        scale: vec3 | None = None,
+        scale: Vec3 | None = None,
     ):
         """
         Creates transform where position, rotation and scale are kept as separate values.
@@ -129,9 +142,9 @@ class Transform:
         When scale is unspecified it defaults to (1, 1, 1).
         """
 
-        self.position = vec3.zero() if position is None else position
+        self.position = Vec3.zero() if position is None else position
         self.rotation = Rotation.identity() if rotation is None else rotation
-        self.scale = vec3.one() if scale is None else scale
+        self.scale = Vec3.one() if scale is None else scale
 
     def get_matrix(self) -> NDArray:
         """
